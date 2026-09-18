@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система учёта выполненных лабораторных работ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<div class="container">
+
+    <!-- ================= ШАПКА + СТАТИСТИКА ================= -->
+    <header class="hero">
+        <div class="hero-text">
+            <span class="badge">ТЕМА 19</span>
+            <h1>Система учёта выполненных<br>лабораторных работ</h1>
+            <p>Приложение фиксирует студентов, лабораторные работы, сдачи, оценки и доработки.</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.students }}</div>
+                <div class="stat-label">студентов</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.labs }}</div>
+                <div class="stat-label">лабораторных</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.submitted }}</div>
+                <div class="stat-label">на проверке</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.checked }}</div>
+                <div class="stat-label">проверено</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= ТРИ ФОРМЫ ================= -->
+    <section class="forms-row">
+
+        <!-- Добавить студента -->
+        <div class="card">
+            <h2>Добавить студента</h2>
+            <form action="/students" method="POST">
+                <input type="text" name="full_name" placeholder="ФИО студента" required>
+                <input type="text" name="group_name" placeholder="Группа" required>
+                <button type="submit" class="btn btn-primary">Добавить</button>
+            </form>
+        </div>
+
+        <!-- Добавить лабораторную -->
+        <div class="card">
+            <h2>Добавить лабораторную</h2>
+            <form action="/labs" method="POST">
+                <input type="text" name="title" placeholder="Лабораторная работа №1" required>
+                <input type="text" name="subject" placeholder="Дисциплина" required>
+                <input type="number" name="max_score" placeholder="5" min="1" required>
+                <input type="date" name="deadline" required>
+                <button type="submit" class="btn btn-primary">Создать</button>
+            </form>
+        </div>
+
+        <!-- Зафиксировать сдачу -->
+        <div class="card">
+            <h2>Зафиксировать сдачу</h2>
+            <form action="/submissions" method="POST">
+                <select name="student_id" required>
+                    <option value="" disabled selected>Выберите студента</option>
+                    {% for s in students %}
+                        <option value="{{ s.id }}">{{ s.group_name }} — {{ s.full_name }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="lab_work_id" required>
+                    <option value="" disabled selected>Выберите работу</option>
+                    {% for l in labs %}
+                        <option value="{{ l.id }}">{{ l.title }} — {{ l.subject }}</option>
+                    {% endfor %}
+                </select>
+
+                <textarea name="comment" placeholder="Комментарий к сдаче" rows="3"></textarea>
+                <button type="submit" class="btn btn-primary">Сдать работу</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- ================= ФИЛЬТР ================= -->
+    <section class="card filter-card">
+        <h2>Фильтр сдач</h2>
+        <form action="/" method="GET" class="filter-form">
+            <input type="text" name="group" placeholder="Группа"
+                   value="{{ request.args.get('group', '') }}">
+
+            <select name="status">
+                <option value="">Все статусы</option>
+                <option value="submitted" {% if request.args.get('status') == 'submitted' %}selected{% endif %}>
+                    На проверке
+                </option>
+                <option value="checked" {% if request.args.get('status') == 'checked' %}selected{% endif %}>
+                    Проверено
+                </option>
+                <option value="revision" {% if request.args.get('status') == 'revision' %}selected{% endif %}>
+                    На доработке
+                </option>
+            </select>
+
+            <button type="submit" class="btn btn-primary">Показать</button>
+        </form>
+    </section>
+
+    <!-- ================= СПИСОК СДАЧ ================= -->
+    <section class="card submissions-card">
+        <h2>Сданные лабораторные работы</h2>
+
+        {% if submissions %}
+            {% for sub in submissions %}
+            <div class="submission {{ sub.status }}">
+                <div class="submission-left">
+                    <span class="status-badge {{ sub.status }}">
+                        {% if sub.status == 'submitted' %}submitted
+                        {% elif sub.status == 'checked' %}checked
+                        {% else %}revision{% endif %}
+                    </span>
+
+                    <div class="submission-title">
+                        {{ sub.group_name }} · {{ sub.full_name }}
+                    </div>
+                    <div class="submission-sub">
+                        {{ sub.title }} · {{ sub.subject }} · дедлайн {{ sub.deadline }}
+                    </div>
+                    <div class="submission-info">
+                        Оценка: {% if sub.score is not none %}{{ sub.score }}{% else %}не выставлена{% endif %}
+                    </div>
+                    {% if sub.comment %}
+                        <div class="submission-comment">{{ sub.comment }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="submission-actions">
+                    {% if sub.status == 'submitted' %}
+                        <form action="/submissions/{{ sub.id }}/check" method="POST" class="action-form">
+                            <input type="number" name="score" placeholder="Оценка" min="0" max="{{ sub.max_score }}">
+                            <input type="text" name="comment" placeholder="Комментарий">
+                            <button type="submit" class="btn btn-primary">Проверить</button>
+                        </form>
+                    {% endif %}
+
+                    {% if sub.status != 'revision' %}
+                        <form action="/submissions/{{ sub.id }}/revision" method="POST" class="action-form">
+                            <input type="text" name="comment" placeholder="Что исправить">
+                            <button type="submit" class="btn btn-warning">На доработку</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="empty">Пока нет сданных работ.</p>
+        {% endif %}
+    </section>
+
+</div>
+</body>
+</html>
