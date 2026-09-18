@@ -512,7 +512,7 @@ SELECT COUNT(*) FROM submissions WHERE status = 'checked';
 ---
 
 ## 10. ССЫЛКА НА РЕПОЗИТОРИЙ
-https://github.com/Temirkaan/lab-work-accounting-app
+[https://github.com/Temirkaan/lab-work-accounting-app](https://github.com/Temirkaan/lab-work-account-app.git)
 
 ---
 
