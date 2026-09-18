@@ -553,3 +553,5 @@ pip install -r requirements.txt
 
 # 4. Запустить сервер
 python app.py
+
+# 5. Откройте http://127.0.0.1:5000/
