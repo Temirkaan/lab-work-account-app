@@ -546,7 +546,7 @@ SELECT COUNT(*) FROM submissions WHERE status = 'checked';
 
 ```bash
 # 1. Клонировать репозиторий
-git clone https://github.com/Temirkaan/lab-work-accounting-app.git
+git clone https://github.com/ВАШ_ЛОГИН/lab-work-accounting-app.git
 cd lab-work-accounting-app
 
 # 2. Создать виртуальное окружение
